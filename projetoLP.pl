@@ -1,15 +1,22 @@
 % Joao Carlos Morgado David - 89471 %
-% Importar exemplo %
-:- [exemplos_puzzles].
 
-% Operacoes Basicas %
-/* Todos estes predicados recebem como primeiro argumento um problema. */
+% Importar Exemplos %
+:- [exemplos_puzzles].
+%---------------------------------------------------------------------
+% Seletores de Puzzle: termometros/2, lim_linhas/2, lim_colunas/2.
+% O primeiro argumento e um puzzle, e o segundo o seu componente
+% desejado.
+%---------------------------------------------------------------------
 termometros([Termometros|_], Termometros).
 lim_linhas([_, Lim_Linhas, _], Lim_Linhas).
 lim_colunas([_, _, Lim_Colunas], Lim_Colunas).
 
-linha((Linha, _), Linha).
-coluna((_, Coluna), Coluna).
+%----------------------------------------------------------------------
+% Seletores Sobre Posicoes: linha/2, coluna/2.
+% O primeiro argumento e uma posicao e o segundo a sua linha ou coluna.
+%----------------------------------------------------------------------
+linha((Linha,_), Linha).
+coluna((_,Coluna), Coluna).
 
 % termometro_em/3 (Termometros, Posicao, Termometro).
 termometro_em(Termometros, Posicao, Termometro) :-
@@ -49,10 +56,9 @@ nao_altera_linhas_anteriores([P|R], L, Ja_Preenchidas) :-
 verifica_parcial(_, _ , _, []) :- !.
 
 verifica_parcial(Puz, Ja_Preenchidas, _, Poss) :- 
-    append(Ja_Preenchidas, Poss, A),
-    list_to_set(A, Poss_Total),
+    union(Ja_Preenchidas, Poss, Union),
     lim_colunas(Puz, Lim_Colunas),
-    verifica_parcial2(Poss_Total, 1, Lim_Colunas).
+    verifica_parcial2(Union, 1, Lim_Colunas).
 
 % verifica_parcial2/3(Poss_Total, Coluna, Lim_Colunas).
 verifica_parcial2(_, _, []) :- !.
@@ -82,3 +88,37 @@ n_elementos_coluna([P|R], Coluna, N, I) :-
 
 % possibilidades_linha/5(Puz, Posicoes_linha, Total, Ja_Preenchidas, Possibilidades_L).
 
+possibilidades_linha(Puz, Posicoes_linha, Total, Ja_Preenchidas, Possibilidades_L) :-
+    linha_atual(Posicoes_linha, Linha_Atual),
+    lim_linhas(Puz, Lim_Linhas),
+    nth1(Linha_Atual, Lim_Linhas, Lim_Atual),
+    findall(Combinacao, combinacao(Lim_Atual, Posicoes_linha, Combinacao), Combinacoes).
+    so_ja_preenchidas(Combinacoes, So_Ja_Preenchidas),
+
+
+% linha_atual/2(Posicoes_linha, Linha).
+linha_atual([P|_], L) :-
+    linha(P, L).
+
+% so_ja_preenchidas/3(Combinacoes, Ja_Preenchidas, Com_Ja_Preenchidas).
+so_ja_preenchidas(Combinacoes, Ja_Preenchidas, So_Ja_Preenchidas) :-
+    so_ja_preenchidas(Combinacoes, Ja_Preenchidas, So_Ja_Preenchidas, []).
+    
+so_ja_preenchidas([], _, So_Ja_Preenchidas, So_Ja_Preenchidas).
+
+so_ja_preenchidas([P|R], Ja_Preenchidas, So_Ja_Preenchidas, Res) :-
+    subset(Ja_Preenchidas, P) ->
+        so_ja_preenchidas(R, Ja_Preenchidas, So_Ja_Preenchidas, [P|Res])
+    ;
+        so_ja_preenchidas(R, Ja_Preenchidas, So_Ja_Preenchidas, Res)
+    .
+
+% combinacao/3(N, L, Combinacao).
+% Combinacao e uma combinacao de L composta por N elementos.
+combinacao(0, _, []).
+
+combinacao(N, L, [E|R]) :-
+    N > 0,
+    append(_, [E|L_Apos_E], L),
+    N_Aux is N - 1,
+    combinacao(N_Aux, L_Apos_E, R).
