@@ -2,6 +2,7 @@
 
 % Importar Exemplos %
 :- [exemplos_puzzles].
+
 %---------------------------------------------------------------------
 % Seletores de Puzzle: termometros/2, lim_linhas/2, lim_colunas/2.
 % O primeiro argumento e um puzzle, e o segundo o seu componente
@@ -92,26 +93,16 @@ possibilidades_linha(Puz, Posicoes_linha, Total, Ja_Preenchidas, Possibilidades_
     linha_atual(Posicoes_linha, Linha_Atual),
     lim_linhas(Puz, Lim_Linhas),
     nth1(Linha_Atual, Lim_Linhas, Lim_Atual),
-    findall(Combinacao, combinacao(Lim_Atual, Posicoes_linha, Combinacao), Combinacoes).
-    so_ja_preenchidas(Combinacoes, So_Ja_Preenchidas),
+    findall(Combinacao, combinacao(Lim_Atual, Posicoes_linha, Combinacao), Combinacoes),
+    com_ja_preenchidas(Combinacoes, C_Ja_Preenchidas),
+    propaga_tudo(Puz, C_Ja_Preenchidas, C_Propagadas).
+
+possibilidades_linha(Puz, Posicoes_linha, Total, Ja_Preenchidas, Possibilidades_L) :-
 
 
 % linha_atual/2(Posicoes_linha, Linha).
 linha_atual([P|_], L) :-
     linha(P, L).
-
-% so_ja_preenchidas/3(Combinacoes, Ja_Preenchidas, Com_Ja_Preenchidas).
-so_ja_preenchidas(Combinacoes, Ja_Preenchidas, So_Ja_Preenchidas) :-
-    so_ja_preenchidas(Combinacoes, Ja_Preenchidas, So_Ja_Preenchidas, []).
-    
-so_ja_preenchidas([], _, So_Ja_Preenchidas, So_Ja_Preenchidas).
-
-so_ja_preenchidas([P|R], Ja_Preenchidas, So_Ja_Preenchidas, Res) :-
-    subset(Ja_Preenchidas, P) ->
-        so_ja_preenchidas(R, Ja_Preenchidas, So_Ja_Preenchidas, [P|Res])
-    ;
-        so_ja_preenchidas(R, Ja_Preenchidas, So_Ja_Preenchidas, Res)
-    .
 
 % combinacao/3(N, L, Combinacao).
 % Combinacao e uma combinacao de L composta por N elementos.
@@ -122,3 +113,38 @@ combinacao(N, L, [E|R]) :-
     append(_, [E|L_Apos_E], L),
     N_Aux is N - 1,
     combinacao(N_Aux, L_Apos_E, R).
+
+% com_ja_preenchidas/3(Combinacoes, Ja_Preenchidas, Com_Ja_Preenchidas).
+com_ja_preenchidas(Combinacoes, Ja_Preenchidas, C_Ja_Preenchidas) :-
+    com_ja_preenchidas(Combinacoes, Ja_Preenchidas, C_Ja_Preenchidas, []).
+    
+com_ja_preenchidas([], _, C_Ja_Preenchidas, C_Ja_Preenchidas).
+
+com_ja_preenchidas([P|R], Ja_Preenchidas, C_Ja_Preenchidas, Res) :-
+    subset(Ja_Preenchidas, P) ->
+        com_ja_preenchidas(R, Ja_Preenchidas, C_Ja_Preenchidas, [P|Res])
+    ;
+        com_ja_preenchidas(R, Ja_Preenchidas, C_Ja_Preenchidas, Res)
+    .
+
+% propaga_tudo/3(Puz, Combinacoes, C_Propagado)
+propaga_tudo(Puz, Combinacoes, C_Propagado) :-
+    propaga_tudo(Puz, Combinacoes, C_Propagado, []).
+
+propaga_tudo(_, [], C_Propagado, C_Propagado).
+
+propaga_tudo(Puz, [P|R], C_Propagado, Res) :-
+    propaga_lista(Puz, P, P_Propagado),
+    propaga_tudo(Puz, R, C_Propagado, [P_Propagado|Res]).
+    
+
+% propaga_lista/2(L_Original, L__Propagada)
+propaga_lista(Puz, L_Original, L_Propagada) :-
+    propaga_lista(Puz, L_Original, L_Propagada, []).
+
+propaga_lista(_, [], L_Propagada, L_Propagada) :- !.
+
+propaga_lista(Puz, [P|R], C_Apos_Propaga, Res) :-
+    propaga(Puz, P, Posicoes), 
+    append(Res, Posicoes, A),
+    propaga_lista(Puz, R, C_Apos_Propaga, A).
